@@ -1,3 +1,4 @@
+# Copyright (C) 2022 Kevin Nguyen, Rodrigo Becerril Ferreyra
 import paho.mqtt.client as mqtt
 import json
 import ssl
