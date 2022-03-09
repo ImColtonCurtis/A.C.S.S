@@ -8,7 +8,7 @@ runbool = False
 
 def calcPeaking():
     # record audio
-    subprocess.run(["ffmpeg", "-t", "1", "-f", "pulse", "-channels", "1", "-i", "2", "-f", "s16le", "-c:a", "pcm_s16le", "/tmp/out.raw", "-y"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(["ffmpeg", "-t", "1", "-f", "pulse", "-channels", "1", "-i", "alsa_input.usb-C-Media_Electronics_Inc._USB_PnP_Sound_Device-00.analog-mono", "-f", "s16le", "-c:a", "pcm_s16le", "/tmp/out.raw", "-y"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     # analyze data
     data = np.memmap("/tmp/out.raw", dtype='h', mode='r')
@@ -23,7 +23,7 @@ def calcPeaking():
 
 def main():
     while True:
-        print(round(calcPeaking(), 3))
+        print(calcPeaking())
 
 if __name__ == "__main__":
     main()
