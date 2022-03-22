@@ -1,53 +1,133 @@
-const uuid = require('uuid').v4;
+const bcrypt = require('bcryptjs'); // Library to hash passwords
+const User = require('../models/user'); // Connection to MongoDB
+const jwt = require('jsonwebtoken'); // Library to generate JWT 
 
-const DUMMY_USERS = [
+
+const signup = async (req, res, next) => {
+    const { email, password, phoneNumber } = req.body; // Extract email, password, phone number from request body
+
+    // Logic to check if the email sent already has an email in mongoDB
+    let existingUser;
+    try
     {
-        id: uuid(),
-        name: 'Kevin Nguyen',
-        email: 'engr.kevin.nguyen@gmail.com',
-        password: 'password'
-    }
+        // Checks if this email is an existing email in the MongoDB database. This is an async task
+        existingUser = await User.findOne({email : email});
+    } catch (err)
+        {
+            console.log("error. Email does not exist");
+            return res.json({error: 'Email does not exist.'});  
+        }
 
-];
-
-// Middleware that sends back all users
-const getUsers = (req, res, next) => {    
-    res.json({ users: DUMMY_USERS});    // Send back all users as a JSON   
-};
-
-const signup = (req, res, next) => {
-    const { name, email, password } = req.body; // Extract name, email, password from request body
-
-    const createdUser = {
-        id: uuid(),
-        name: name,
-        email: email,
-        password: password
-    };
-
-    DUMMY_USERS.push(createdUser);
-
-    res.status(201).json({user: createdUser}); // send back response 201 because we created new data
-}; 
-
-const login = (req, res, next) => {
-    const { email, password } = req.body;
-
-    const identifiedUser = DUMMY_USERS.find( u => u.email === email ); // u.email is an email in DUMMY_USERS that equals email
-
-    if (!identifiedUser || identifiedUser.password !== password) // If no identifiedUser has been found or password does not match
+    if (existingUser)
     {
-        console.log("Could not identify user!");
-        res.json({message: 'Could not log in'});
-        console.log(identifiedUser);
+        console.log("Sign up failed... email is taken");
+        return res.json({error: 'Email taken.'});  
     }
     else
     {
-        res.json({message: 'Logged in'});
-        console.log(identifiedUser)
+        let hashedPassword;
+
+        try
+        {
+            // Salt the password by 12 salting rounds (fast and can't be reversed)
+            hashedPassword = await bcrypt.hash(password, 12); 
+        }
+        catch (err)
+        {
+            console.log("Could not create hash");
+            return res.json({error: 'Bcrypt error.'});  
+        }
+
+        const createdUser = new User(
+            {
+                email: email,
+                password: hashedPassword,
+                phoneNumber: phoneNumber
+            }
+        )
+
+        // Save the user
+        try{
+            // Saving createdUser to mongoDB
+            await createdUser.save();
+        } catch(err)
+        {
+            console.log("Error saving to DB");
+            return res.json({error: 'Could not create user.'});  
+        }
+        
+
+        res.json({user: createdUser.toObject()}); // send back response 201 because we created new data
+}
+}; 
+
+const login = async (req, res, next) => {
+    const { email, password } = req.body;
+
+    // Logic to check if the email sent is an existing email in mongoDB
+    let existingUser;
+    try
+    {
+        // Checks if this email is an existing email in the MongoDB database. This is an async task
+        existingUser = await User.findOne({email : email});
+    } 
+    catch (err)
+    {
+        console.log("error. Email does not exist");
+        return res.json({error: 'Email does not exist'});  
+    }
+
+
+
+    if (!existingUser)
+    {
+        console.log("Error. Non-existent User");
+        return res.json({error: 'Non-existent user'});
+    }
+
+    
+   
+    let isValidPassword = false;
+    try
+    {
+        // Compare pulls salt out of hashed password and uses that salt to hash given password to compare 
+        isValidPassword = await bcrypt.compare(password, existingUser.password);
+    }
+    catch
+    {
+        console.log("Error. Could not compare hash. Check credentials again.");
+        return res.json({error: 'Could not log in. Check password.'});
+    }
+
+    if (!isValidPassword)
+    {
+        console.log("Wrong password.");
+        return res.json({error: 'Could not log in.'});
+    }
+
+    else
+    {
+        let token_str;
+        try{
+            token_str = jwt.sign(
+                {email: existingUser.email},    // What to encode into the token
+                "secret",     // string (private key) to sign the token with
+                {expiresIn: '1h'}       // Token expires in one hour
+            );
+            res.json({
+                message: "Logged in",
+                token: token_str
+            });
+        }
+        catch
+        {
+            console.log("Error. Could not generate token.");
+            return res.json({error: 'Could not generate token.'});
+        }
+        
     }
 };
 
-exports.getUsers = getUsers; //Multi export
+
 exports.signup = signup; //Multi export
 exports.login = login; //Multi export
