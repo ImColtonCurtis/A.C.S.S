@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs'); // Library to hash passwords
 const User = require('../models/user'); // Connection to MongoDB
 const jwt = require('jsonwebtoken'); // Library to generate JWT 
-
+const Data = require('../models/data'); // Connection to MongoDB
 
 const signup = async (req, res, next) => {
     const { email, password, phoneNumber } = req.body; // Extract email, password, phone number from request body
@@ -45,17 +45,38 @@ const signup = async (req, res, next) => {
                 phoneNumber: phoneNumber
             }
         )
-
+        
+        const createdData = new Data(
+            {
+                email: email,
+                thingName: 'None',
+                ultrasonic: [],
+                gyroscope: [],
+                accelerometer: [],
+                microphone: 0
+            }
+        )
         // Save the user
         try{
             // Saving createdUser to mongoDB
             await createdUser.save();
+            console.log("Created user in DB");
         } catch(err)
         {
-            console.log("Error saving to DB");
+            console.log("Error creating user in DB");
             return res.json({error: 'Could not create user.'});  
         }
         
+        // Save the user
+        try{
+            // Saving createdUser to mongoDB
+            await createdData.save();
+            console.log("Created user sensor data in DB");
+        } catch(err)
+        {
+            console.log("Error creating user data in DB");
+            return res.json({error: 'Could not create user data.'});  
+        }
 
         res.json({user: createdUser.toObject()}); // send back response 201 because we created new data
 }
@@ -111,7 +132,7 @@ const login = async (req, res, next) => {
         try{
             token_str = jwt.sign(
                 {email: existingUser.email},    // What to encode into the token
-                "secret",     // string (private key) to sign the token with
+                "private-key",     // string (private key) to sign the token with
                 {expiresIn: '1h'}       // Token expires in one hour
             );
             res.json({

@@ -11,11 +11,15 @@ const iotCoreRoutes = require('./routes/iot-core-routes');
 var corsOptions = {
     origin: '*', // * means any origin
     optionsSuccessStatus: 200,
+    exposedHeaders: 'Authorization',
+    methods: ['GET', 'POST'],
+
   }
 
 const app = express(); // create our app object
 
 app.use(cors(corsOptions));
+
 app.use(bodyParser.json());
 
 
@@ -30,7 +34,7 @@ app.use('/api/iotCore',iotCoreRoutes);
 
 
 mongoose
-    .connect('uri ask kevin')
+    .connect(URI goes here)
     .then(() => {app.listen(5000);console.log("Connected to MongoDB server...");}) 
     .catch(err =>{console.log("Error connecting to MongoDB...");
     console.log(err)});

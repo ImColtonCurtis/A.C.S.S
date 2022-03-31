@@ -32,7 +32,7 @@ const livestreamOn = async (req, res, next) => {
     certPath: iotCertPath,
     caPath: iotCaPath,
     clientId: thingName + ' ',
-    host:"Ask kevin"
+    host: host uri
   };
 
   let clientTokenUpdate;
@@ -107,7 +107,7 @@ const livestreamOff = async (req, res, next) => {
     certPath: iotCertPath,
     caPath: iotCaPath,
     clientId: thingName + ' ',
-    host:"Ask Kevin"
+    host: host uri
   };
 
   
