@@ -5,8 +5,8 @@ import time
 from gpiozero import OutputDevice
 
 # Fan turn-on/turn-off temperatures; note that CPU throttles at 80 C anyways
-ON_t = 46
-OFF_t = 43
+ON_t = 45
+OFF_t = 41
 
 # Time in seconds between CPU temperature checks
 SLEEP_t = 5
@@ -20,11 +20,15 @@ def get_temp():
     temp_str = output.stdout.decode()
     try:
         # vcgencmd measure_temp returns as "temp = ###.#'C"
+        # returns parsed item as a float value
         return float(temp_str.split('=')[1].split('\'')[0])
     except (IndexError, ValueError):
         raise RuntimeError('Could not parse temperature output.')
     
 if __name__ == '__main__':
+    if OFF_t >= ON_t:
+        raise RuntimeError('Off temperature must be lower than activation temperature.')
+    
     # gpiozero-provided object wrapper for generic output device (e.g. fan) 
     fan = OutputDevice(GPIO_PIN)
     
