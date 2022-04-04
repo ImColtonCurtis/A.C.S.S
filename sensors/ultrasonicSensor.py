@@ -41,7 +41,7 @@ def calcDistance(num):
     GPIO.output(TRIG,False)
 
     # wait for sensors to settle
-    time.sleep(0.0554) #was 0.0334
+    time.sleep(0.175) #was 0.0334
     GPIO.output(TRIG,True)
     time.sleep(0.00001) # wait 10 micro seconds
     GPIO.output(TRIG,False)
