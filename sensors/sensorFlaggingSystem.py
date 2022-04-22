@@ -55,7 +55,8 @@ def calcPoints():
             ultrasonicFlag[i] = 3
         elif ultrasonicPrevDistance[i] <= 30 and ultrasonicPrevDistance[i] > 0:
             ultrasonicFlag[i] = 4
-            
+        else:
+            ultrasonicFlag[i] = 0            
 
     # accelerometer parameters:
     # no more than 4 points may be contributed from the accelerometer
@@ -68,21 +69,24 @@ def calcPoints():
         elif accelerometerPrev[j] >= 7 and accelerometerPrev[j] < 11:
             accelerometerFlag[j] = 3
         elif accelerometerPrev[j] >= 11:
-            accelerometerFlag[j] = 4    
+            accelerometerFlag[j] = 4
+        else:
+            accelerometerFlag[j] = 0 
     
     # gyroscope parameters:
     # no more than 4 points may be contributed from the gyroscope
     for k in range(3):
-        if gyroscopePrev[k] >= 15 and gyroscopePrev[k] < 120:
+        if gyroscopePrev[k] >= 4 and gyroscopePrev[k] < 6:
             gyroscopeFlag[k] = 1
-        elif gyroscopePrev[k] >= 120 and gyroscopePrev[k] < 180:
+        elif gyroscopePrev[k] >= 6 and gyroscopePrev[k] < 9:
             gyroscopeFlag[k] = 2
-        elif gyroscopePrev[k] >= 180 and gyroscopePrev[k] < 230:
+        elif gyroscopePrev[k] >= 9 and gyroscopePrev[k] < 15:
             gyroscopeFlag[k] = 3
-        elif gyroscopePrev[k] >= 230:
+        elif gyroscopePrev[k] >= 15:
             gyroscopeFlag[k] = 4
-    
-    
+        else:
+            gyroscopeFlag[k] = 0
+        
     # microphone parameters:
     # no more than 4 points may be contributed from the microhpone
     microphoneFlag = 0
@@ -94,6 +98,8 @@ def calcPoints():
         microphoneFlag = 3
     elif microphonePrev >= 0.85:
         microphoneFlag = 4
+    else:
+        microphoneFlag = 0
 
     pointVal = np.amax(ultrasonicFlag) + np.amax(accelerometerFlag) + np.amax(gyroscopeFlag) #+ microphoneFlag
     global alertFlag
@@ -120,6 +126,7 @@ def getUltrasonicSensors():
         #accurate to 380 centimeters            
         if ultrasonicPrevDistance[i] > 400:         
             ultrasonicPrevDistance[i] = 400
+    time.sleep(0.0334)
             
 # get accelerometer (rotation)
 def getAccelerometer():
@@ -213,10 +220,8 @@ def getSensors():
     #other sensor calls
     while micIsCalculating == 1:
         #sensor calls
-        getAccelerometer()
-        getUltrasonicSensors()
+        getAccelerometer()        
         getGyroscope()
-        time.sleep(0.0334)
         if alertFlag == 0 and inAlertMode == 0:
             calcPoints() # calculate points
         
@@ -234,13 +239,16 @@ def main():
             for i in range (90):
                 print(i, "Retrieving Data...")
                 alertThread = Thread(target = pushData, args = ( ))
+                ultraThread2 = Thread(target = getUltrasonicSensors, args = ( ))
                 micThread2 = Thread(target = getMic, args = ( ))
                 sensorThread2 = Thread(target = getSensors, args = ( )) 
-                micThread2.start()                
+                micThread2.start()   
+                ultraThread2.start()   
                 sensorThread2.start()
                 alertThread.start()                
                 alertThread.join()
                 micThread2.join()
+                ultraThread2.join()  
                 sensorThread2.join()
                 print(i, "Pushing Data!")
             global ultrasonicFlag
@@ -255,10 +263,13 @@ def main():
         else:
             # sensors
             micThread = Thread(target = getMic, args = ( ))
+            ultraThread = Thread(target = getUltrasonicSensors, args = ( ))
             sensorThread = Thread(target = getSensors, args = ( ))    
             micThread.start()
+            ultraThread.start()  
             sensorThread.start()
             micThread.join()
+            ultraThread.join()  
             sensorThread.join()
 
 if __name__ == "__main__":
